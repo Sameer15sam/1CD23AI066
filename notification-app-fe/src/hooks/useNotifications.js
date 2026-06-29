@@ -6,6 +6,16 @@ import {
 
 const REFRESH_INTERVAL_MS = 30_000;
 
+function filterKey(filters) {
+  return [
+    filters.type ?? "",
+    filters.status ?? "",
+    filters.sort ?? "newest",
+    filters.page ?? 1,
+    filters.per_page ?? 20,
+  ].join("|");
+}
+
 export function useNotifications(filters = {}) {
   const [notifications, setNotifications] = useState([]);
   const [meta,          setMeta]          = useState(null);
@@ -13,6 +23,8 @@ export function useNotifications(filters = {}) {
   const [statistics,    setStatistics]    = useState([]);
   const [loading,       setLoading]       = useState(true);
   const [error,         setError]         = useState(null);
+
+  const key = filterKey(filters);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -32,7 +44,7 @@ export function useNotifications(filters = {}) {
     } finally {
       setLoading(false);
     }
-  }, [JSON.stringify(filters)]); // eslint-disable-line
+  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     load();
@@ -54,10 +66,14 @@ export function useNotifications(filters = {}) {
 
   const remove = useCallback(async (id) => {
     await deleteNotification(id);
-    const wasUnread = notifications.find((n) => n.id === id && !n.is_read);
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
-    if (wasUnread) setUnreadCount((c) => Math.max(0, c - 1));
-  }, [notifications]);
+    setNotifications((prev) => {
+      const target = prev.find((n) => n.id === id);
+      if (target && !target.is_read) {
+        setUnreadCount((c) => Math.max(0, c - 1));
+      }
+      return prev.filter((n) => n.id !== id);
+    });
+  }, []);
 
   return { notifications, meta, unreadCount, statistics, loading, error, refresh: load, markRead, markAllRead, remove };
 }

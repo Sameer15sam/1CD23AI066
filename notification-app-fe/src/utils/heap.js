@@ -21,7 +21,10 @@ export class MinHeap {
 
   toSortedArray() {
     return [...this._heap]
-      .sort((a, b) => a.score - b.score)
+      .sort((a, b) => {
+        if (a.score !== b.score) return a.score - b.score;
+        return new Date(b.notification.created_at) - new Date(a.notification.created_at);
+      })
       .map((n) => n.notification);
   }
 

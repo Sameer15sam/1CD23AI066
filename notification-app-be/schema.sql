@@ -50,6 +50,8 @@ CREATE INDEX idx_status_unread      ON notification_status(student_id, is_read)
 CREATE INDEX idx_notifications_type ON notifications(type_id);
 CREATE INDEX idx_notifications_date ON notifications(created_at DESC);
 CREATE INDEX idx_status_composite   ON notification_status(student_id, notification_id, is_read);
+CREATE INDEX idx_status_active      ON notification_status(student_id, is_deleted)
+    WHERE is_deleted = FALSE;
 
 INSERT INTO students (student_id, name, email, department, year) VALUES
     ('STU2024001', 'Ayesha Khan',  'ayesha@college.edu', 'Computer Science', 3),

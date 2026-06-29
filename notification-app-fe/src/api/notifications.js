@@ -8,7 +8,7 @@ export async function fetchNotifications(params = {}) {
   if (params.page)     query.set("page",     params.page);
   if (params.per_page) query.set("per_page", params.per_page);
   const qs = query.toString();
-  return apiFetch(`/notifications/${qs ? `?${qs}` : ""}`);
+  return apiFetch(qs ? `/notifications/?${qs}` : "/notifications/");
 }
 
 export async function fetchNotificationById(id) {

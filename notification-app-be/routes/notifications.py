@@ -25,7 +25,11 @@ def list_notifications():
     filter_status = request.args.get("status")
     sort_by       = request.args.get("sort", "newest")
 
-    conditions = ["ns.student_id = %s", "ns.is_deleted = FALSE"]
+    conditions = [
+        "ns.student_id = %s",
+        "ns.is_deleted = FALSE",
+        "(n.expires_at IS NULL OR n.expires_at > NOW())",
+    ]
     params     = [student_id]
 
     if filter_type:
@@ -92,6 +96,7 @@ def get_notification(notification_id):
         JOIN notifications      n  ON n.id  = ns.notification_id
         JOIN notification_types nt ON nt.id = n.type_id
         WHERE ns.student_id = %s AND n.id = %s AND ns.is_deleted = FALSE
+          AND (n.expires_at IS NULL OR n.expires_at > NOW())
     """, (student_id, notification_id))
 
     if not rows:
@@ -165,6 +170,7 @@ def statistics():
         JOIN notifications      n  ON n.id  = ns.notification_id
         JOIN notification_types nt ON nt.id = n.type_id
         WHERE ns.student_id = %s AND ns.is_deleted = FALSE
+          AND (n.expires_at IS NULL OR n.expires_at > NOW())
         GROUP BY nt.slug, nt.label, nt.priority
         ORDER BY nt.priority
     """, (student_id,))
