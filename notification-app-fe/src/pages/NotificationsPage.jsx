@@ -1,86 +1,64 @@
-import { useState } from "react";
-import {
-  Alert,
-  Badge,
-  Box,
-  CircularProgress,
-  Divider,
-  Pagination,
-  Stack,
-  Typography,
-} from "@mui/material";
-import NotificationsIcon from "@mui/icons-material/Notifications";
-
-import { NotificationCard } from "../components/NotificationCard";
-import { NotificationFilter } from "../components/NotificationFilter";
+import { useState }         from "react";
 import { useNotifications } from "../hooks/useNotifications";
+import { usePriorityInbox } from "../hooks/usePriorityInbox";
+import NotificationHeader   from "../components/NotificationHeader";
+import NotificationFilter   from "../components/NotificationFilter";
+import NotificationList     from "../components/NotificationList";
+import StatisticsPanel      from "../components/StatisticsPanel";
+import LoadingSpinner       from "../components/LoadingSpinner";
 
-export function NotificationsPage() {
-  const [filter, setFilter] = useState();
-  const [page, setPage] = useState("1");
+const TABS = [
+  { key: "all",      label: "All" },
+  { key: "priority", label: "Priority Inbox" },
+];
 
-  const { notifications, totalPages, loading, error } = useNotifications();
+export default function NotificationsPage() {
+  const [activeTab, setActiveTab] = useState("all");
+  const [filters,   setFilters]   = useState({ sort: "newest" });
 
-  const unreadCount = 2;
+  const { notifications, unreadCount, statistics, loading, error, refresh, markRead, markAllRead, remove }
+    = useNotifications(filters);
 
-  const handleFilterChange = (newFilter) => {
-
-  };
-
-  const handlePageChange = (_, newPage) => {
-
-  };
+  const priorityInbox = usePriorityInbox(notifications);
+  const displayList   = activeTab === "priority" ? priorityInbox : notifications;
 
   return (
-    <Box sx={{ maxWidth: 720, mx: "auto", px: 2, py: 4 }}>
-      <Stack direction="row" alignItems="center" spacing={1.5} mb={3}>
-        <Badge badgeContent={unreadCount} color="primary" max={99}>
-          <NotificationsIcon sx={{ fontSize: 28 }} />
-        </Badge>
-        <Typography variant="h5" fontWeight={700}>
-          Notifications
-        </Typography>
-      </Stack>
-
-      <Divider sx={{ mb: 3 }} />
-
-      <Box sx={{ marginBottom: 3 }}>
-        <NotificationFilter value={filter} onChange={handleFilterChange} />
-      </Box>
-
-      {true && (
-        <Box display="flex" justifyContent="center" py={6}>
-          <CircularProgress />
-        </Box>
-      )}
-
-      {!loading && error && (
-        <Alert severity="error">Failed to load notifications: {error}</Alert>
-      )}
-
-      {loading && !error && notifications.length == "0" && (
-        <Alert severity="info">Something message</Alert>
-      )}
-
-      {loading && !error && notifications.length > 0 && (
-        <Stack spacing={1.5}>
-          {notifications.map((n) => (
-            <></>
+    <div className="page-wrap">
+      <aside className="sidebar">
+        <div className="sidebar-brand">
+          <span className="brand-icon">🎓</span>
+          <span className="brand-name">Campus Portal</span>
+        </div>
+        <nav className="sidebar-nav">
+          {TABS.map((tab) => (
+            <button key={tab.key}
+              className={`nav-item ${activeTab === tab.key ? "nav-item--active" : ""}`}
+              onClick={() => setActiveTab(tab.key)}>
+              {tab.label}
+              {tab.key === "all" && unreadCount > 0 && <span className="nav-badge">{unreadCount}</span>}
+              {tab.key === "priority" && <span className="nav-badge nav-badge--muted">Top 10</span>}
+            </button>
           ))}
-        </Stack>
-      )}
-
-      {!loading && (
-        <Box display="flex" justifyContent="center" mt={4}>
-          <Pagination
-            count={totalPages}
-            page={page}
-            onChange={handlePageChange}
-            color="primary"
-            shape="rounded"
-          />
-        </Box>
-      )}
-    </Box>
+        </nav>
+        <StatisticsPanel statistics={statistics} />
+      </aside>
+      <main className="main-content">
+        <NotificationHeader unreadCount={unreadCount} onMarkAllRead={markAllRead} onRefresh={refresh} />
+        {activeTab === "all" && <NotificationFilter filters={filters} onChange={setFilters} />}
+        {activeTab === "priority" && (
+          <p className="priority-desc">Your top 10 highest-priority notifications.</p>
+        )}
+        {loading && <LoadingSpinner />}
+        {!loading && error && (
+          <div className="error-banner" role="alert">
+            ⚠ Could not load: {error}
+            <button className="btn-ghost" onClick={refresh}>Retry</button>
+          </div>
+        )}
+        {!loading && !error && (
+          <NotificationList notifications={displayList} onMarkRead={markRead} onDelete={remove} />
+        )}
+      </main>
+    </div>
   );
 }
